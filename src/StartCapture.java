@@ -5,18 +5,25 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -25,11 +32,16 @@ import com.sun.awt.AWTUtilities;
 
 public class StartCapture{
 
+	private JLabel imageField;
 	private JFrame[] frame;
 	private Component component;
+	private String saveDir;
+	private File image = null;
 
-	public StartCapture(Component component){
+	public StartCapture(Component component, JLabel imageField, String saveDir){
 		this.component = component;
+		this.imageField = imageField;
+		this.saveDir = saveDir;
 
 		JFrame.setDefaultLookAndFeelDecorated(false);
 		GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
@@ -89,15 +101,15 @@ public class StartCapture{
 					}
 					BufferedImage bi = robot.createScreenCapture(new Rectangle(
 							(int)startPoint.getX(), (int)startPoint.getY(),
-							(int)(endPoint.getX() - startPoint.getX()), (int)(endPoint.getY() - startPoint.getY())));
+							(int)(endPoint.getX() - startPoint.getX()),
+							(int)(endPoint.getY() - startPoint.getY())));
 					try{
-						ImageIO.write(bi, "PNG", new File("C:\\Users\\tao\\Desktop\\tempppp.png"));
-						//ImageIO.write(bi, "PNG", new File("/Users/tao/Desktop/tempppp.png"));
+						image = new File(saveDir + "/" + getFileName() + ".png");
+						ImageIO.write(bi, "PNG", image);
+						imageField.setIcon(new ImageIcon(getResizedBackgroundImage(image)));
 					}catch(IOException e2){
 						JOptionPane.showMessageDialog(component, "だめみたいですね・・・");
-						e2.printStackTrace();
 					}
-					JOptionPane.showMessageDialog(component, "OK!");
 				}
 
 				@Override
@@ -111,7 +123,6 @@ public class StartCapture{
 					repaint();
 				}
 			};
-
 			addMouseListener(mouseHandler);
 			addMouseMotionListener(mouseHandler);
 		}
@@ -133,5 +144,55 @@ public class StartCapture{
 			}
 			g2d.dispose();
 		}
+	}
+
+	public BufferedImage getResizedBackgroundImage(File file){
+		try{
+			int maxWidth = 400;
+			int maxHeight = 130;
+
+			BufferedImage sourceImage = ImageIO.read(file);
+
+			int sourceWidht = sourceImage.getWidth();
+			int sourceHeight = sourceImage.getHeight();
+
+			BigDecimal bdW = new BigDecimal(maxWidth);
+			bdW = bdW.divide(new BigDecimal(sourceWidht), 8, BigDecimal.ROUND_HALF_UP);
+			BigDecimal bdH = new BigDecimal(maxHeight);
+			bdH = bdH.divide(new BigDecimal(sourceHeight), 8, BigDecimal.ROUND_HALF_UP);
+
+			if(bdH.compareTo(bdW) < 0)
+				maxWidth = -1;
+			else
+				maxHeight = -1;
+
+			Image targetImage = sourceImage.getScaledInstance(maxWidth, maxHeight, Image.SCALE_DEFAULT);
+
+			BufferedImage targetBufferedImage =
+					new BufferedImage(targetImage.getWidth(null), targetImage.getHeight(null), BufferedImage.TYPE_INT_RGB);
+			Graphics2D g = targetBufferedImage.createGraphics();
+			g.drawImage(targetImage, 0, 0, null);
+
+			if(sourceHeight < maxHeight){
+				sourceWidht *= (float)maxHeight / sourceHeight;
+				sourceHeight = maxHeight;
+			}
+			Rectangle2D rect = new Rectangle2D.Double(0, 0, sourceWidht, sourceHeight);
+			g.setColor(new Color(255, 255, 255, 170));
+			g.fill(rect);
+
+			return targetBufferedImage;
+		}catch(IOException e){
+			System.exit(1);
+			return null;
+		}
+	}
+
+	public String getFileName(){
+		return new SimpleDateFormat("yyyy-MM-dd HH.mm.ss").format(new Date());
+	}
+
+	public File getImage(){
+		return image;
 	}
 }
