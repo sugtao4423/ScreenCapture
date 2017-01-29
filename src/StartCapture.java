@@ -99,10 +99,7 @@ public class StartCapture{
 					}catch(AWTException e2){
 						e2.printStackTrace();
 					}
-					BufferedImage bi = robot.createScreenCapture(new Rectangle(
-							(int)startPoint.getX(), (int)startPoint.getY(),
-							(int)(endPoint.getX() - startPoint.getX()),
-							(int)(endPoint.getY() - startPoint.getY())));
+					BufferedImage bi = robot.createScreenCapture(getPointDiff(startPoint, endPoint));
 					try{
 						image = new File(saveDir + "/" + getFileName() + ".png");
 						ImageIO.write(bi, "PNG", image);
@@ -115,12 +112,16 @@ public class StartCapture{
 				@Override
 				public void mouseDragged(MouseEvent e){
 					Point dragPoint = e.getPoint();
-					int x = Math.min(clickPoint.x, dragPoint.x);
-					int y = Math.min(clickPoint.y, dragPoint.y);
-					int width = Math.max(clickPoint.x - dragPoint.x, dragPoint.x - clickPoint.x);
-					int height = Math.max(clickPoint.y - dragPoint.y, dragPoint.y - clickPoint.y);
-					selectionBounds = new Rectangle(x, y, width, height);
+					selectionBounds = new Rectangle(getPointDiff(clickPoint, dragPoint));
 					repaint();
+				}
+
+				private Rectangle getPointDiff(Point p1, Point p2){
+					int x = Math.min(p1.x, p2.x);
+					int y = Math.min(p1.y, p2.y);
+					int width = Math.max(p1.x - p2.x, p2.x - p1.x);
+					int height = Math.max(p1.y - p2.y, p2.y - p1.y);
+					return new Rectangle(x, y, width, height);
 				}
 			};
 			addMouseListener(mouseHandler);
