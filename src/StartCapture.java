@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
@@ -33,7 +34,7 @@ import com.sun.awt.AWTUtilities;
 public class StartCapture{
 
 	private JLabel imageField;
-	private JFrame[] frame;
+	private JFrame frame;
 	private Component component;
 	private String saveDir;
 	private File image = null;
@@ -44,19 +45,21 @@ public class StartCapture{
 		this.saveDir = saveDir;
 
 		JFrame.setDefaultLookAndFeelDecorated(false);
+		Rectangle virtualBounds = new Rectangle();
 		GraphicsDevice[] gds = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices();
-		frame = new JFrame[gds.length];
-		for(int i = 0; i < gds.length; i++){
-			frame[i] = new JFrame();
-			frame[i].setLocationRelativeTo(null);
-			frame[i].setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-			frame[i].getContentPane().add(new CapturePane());
-			frame[i].setUndecorated(true);
-			AWTUtilities.setWindowOpaque(frame[i], false);
-			frame[i].setLocation(gds[i].getDefaultConfiguration().getBounds().x, gds[i].getDefaultConfiguration().getBounds().y);
-			frame[i].setBounds(gds[i].getDefaultConfiguration().getBounds());
-			frame[i].setVisible(true);
+		for(GraphicsDevice gd : gds){
+			for(GraphicsConfiguration gc : gd.getConfigurations())
+				virtualBounds = virtualBounds.union(gc.getBounds());
 		}
+		frame = new JFrame();
+		frame.setLocationRelativeTo(null);
+		frame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		frame.getContentPane().add(new CapturePane());
+		frame.setUndecorated(true);
+		AWTUtilities.setWindowOpaque(frame, false);
+		frame.setLocation(virtualBounds.x, virtualBounds.y);
+		frame.setBounds(virtualBounds);
+		frame.setVisible(true);
 	}
 
 	public class CapturePane extends JPanel{
@@ -90,8 +93,7 @@ public class StartCapture{
 					endPoint = e.getLocationOnScreen();
 					clickPoint = null;
 
-					for(JFrame f : frame)
-						f.dispose();
+					frame.dispose();
 
 					Robot robot = null;
 					try{
