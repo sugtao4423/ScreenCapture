@@ -112,7 +112,7 @@ public class StartCapture{
 				@Override
 				public void mouseDragged(MouseEvent e){
 					Point dragPoint = e.getPoint();
-					selectionBounds = new Rectangle(getPointDiff(clickPoint, dragPoint));
+					selectionBounds = getPointDiff(clickPoint, dragPoint);
 					repaint();
 				}
 
